@@ -62,7 +62,7 @@ fi
 
 # Try auto install for composer
 if [ -f "/var/www/html/composer.lock" ]; then
-  composer install --no-dev --working-dir=/var/www/html
+  composer install --dev --prefer-dist --no-progress --working-dir=/var/www/html
 fi
 
 # Enable custom nginx config files if they exist
