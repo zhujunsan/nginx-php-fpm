@@ -198,7 +198,7 @@ RUN apk add --update gcc g++ make automake autoconf bison flex && \
     make && \
     make install && \
     rm -rf /usr/src/thrift-$THRIFT_VERSION && \
-    apk del gcc g++ make automake autoconf bison flex && \
+    apk del gcc g++ make automake autoconf bison flex
 
 ADD conf/supervisord.conf /etc/supervisord.conf
 
