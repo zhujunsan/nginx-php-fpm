@@ -1,4 +1,4 @@
-FROM php:7.1.3-fpm-alpine
+FROM php:7.1.4-fpm-alpine
 
 MAINTAINER ngineered <support@ngineered.co.uk>
 
@@ -7,6 +7,8 @@ ENV fpm_conf /usr/local/etc/php-fpm.d/www.conf
 ENV php_vars /usr/local/etc/php/conf.d/docker-vars.ini
 
 ENV NGINX_VERSION 1.12.0
+
+ENV THRIFT_VERSION 0.10.0
 
 RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
   && CONFIG="\
@@ -131,11 +133,12 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
   && ln -sf /dev/stdout /var/log/nginx/access.log \
   && ln -sf /dev/stderr /var/log/nginx/error.log
 
-RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
+RUN echo @testing http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
 #    sed -i -e "s/v3.4/edge/" /etc/apk/repositories && \
-    echo /etc/apk/respositories && \
-    apk update && \
-    apk add --no-cache bash \
+# uncomment following if you are in China
+#    sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories am__api_version='1.15'
+#    echo /etc/apk/respositories && \
+    apk add --update --no-cache bash \
     openssh-client \
     wget \
     supervisor \
@@ -184,6 +187,19 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
     apk del gcc musl-dev linux-headers libffi-dev augeas-dev python-dev
 #    ln -s /usr/bin/php7 /usr/bin/php
 
+# Install Thrift
+RUN apk add --update gcc g++ make automake autoconf bison flex && \
+    curl -fSL http://mirror.cc.columbia.edu/pub/software/apache/thrift/$THRIFT_VERSION/thrift-$THRIFT_VERSION.tar.gz -o thrift.tar.gz && \
+    tar -zxC /usr/src -f thrift.tar.gz && \
+    rm thrift.tar.gz && \
+    cd /usr/src/thrift-$THRIFT_VERSION && \
+#    sed -i "s/am__api_version='1.14'/am__api_version='1.15'/g" configure && \
+    ./configure --without-python && \
+    make && \
+    make install && \
+    rm -rf /usr/src/thrift-$THRIFT_VERSION && \
+    apk del gcc g++ make automake autoconf bison flex && \
+
 ADD conf/supervisord.conf /etc/supervisord.conf
 
 # Copy our nginx config
@@ -192,10 +208,10 @@ ADD conf/nginx.conf /etc/nginx/nginx.conf
 
 # nginx site conf
 RUN mkdir -p /etc/nginx/sites-available/ && \
-mkdir -p /etc/nginx/sites-enabled/ && \
-mkdir -p /etc/nginx/ssl/ && \
-rm -Rf /var/www/* && \
-mkdir /var/www/html/
+    mkdir -p /etc/nginx/sites-enabled/ && \
+    mkdir -p /etc/nginx/ssl/ && \
+    rm -Rf /var/www/* && \
+    mkdir /var/www/html/
 ADD conf/nginx-site.conf /etc/nginx/sites-available/default.conf
 ADD conf/nginx-site-ssl.conf /etc/nginx/sites-available/default-ssl.conf
 RUN ln -s /etc/nginx/sites-available/default.conf /etc/nginx/sites-enabled/default.conf
