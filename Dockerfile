@@ -200,6 +200,9 @@ RUN apk add --update gcc g++ make automake autoconf bison flex && \
     rm -rf /usr/src/thrift-$THRIFT_VERSION && \
     apk del gcc g++ make automake autoconf bison flex
 
+# Install Redis
+RUN apk add --update redis
+
 ADD conf/supervisord.conf /etc/supervisord.conf
 
 # Copy our nginx config
